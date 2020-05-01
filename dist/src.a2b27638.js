@@ -370,6 +370,18 @@ var Renderer = /*#__PURE__*/function () {
       } else {
         this.ctx.drawImage(_Assets.default.imgs['Player'], player.sx, player.sy, player.sw, player.sh, player.x, player.y, this.larguraTileAtual, this.alturaTileAtual);
       }
+
+      this.drawBullets(player.bullets);
+    }
+  }, {
+    key: "drawBullets",
+    value: function drawBullets(bullets) {
+      var _this = this;
+
+      this.ctx.fillStyle = 0xFF0000;
+      bullets.forEach(function (b) {
+        _this.ctx.fillRect(b.x, b.y, 10, 10);
+      });
     }
   }, {
     key: "clear",
@@ -433,6 +445,10 @@ var Input = {
         this.estado.andandoDireita = false;
         this.estado.parado = true;
         break;
+
+      case 'Control':
+        this.estado.atirando = false;
+        break;
     }
   },
   keyDown: function keyDown(key) {
@@ -451,6 +467,11 @@ var Input = {
 
       case 'w':
         if (!this.estado.pulando) this.estado.pulando = true;
+        break;
+
+      case 'Control':
+        this.estado.atirando = true;
+        break;
     }
   },
   estado: {
@@ -478,8 +499,61 @@ var Char = {
   _VELOCIDADE_X: 5,
   _VELOCIDADE_Y: 5,
   _VELOCIDADE_PULO: -15,
+  _MAX_BULLETS: 3,
+  _BULLET_SPEED: 10,
   image: _Assets.default.imgs['Player'],
   facingLeft: false,
+  currentAnimationCicle: 'IDLE',
+  currentAnimationFrame: 0,
+  lastAnimationUpdate: 0,
+  maxFrameTime: 100,
+  bullets: [],
+  animationFrames: {
+    IDLE: [{
+      x: 1,
+      y: 57
+    }, {
+      x: 9,
+      y: 57
+    }, {
+      x: 17,
+      y: 57
+    }, {
+      x: 25,
+      y: 57
+    }],
+    WALKING: [{
+      x: 1,
+      y: 32
+    }, {
+      x: 9,
+      y: 32
+    }, {
+      x: 17,
+      y: 32
+    }, {
+      x: 25,
+      y: 32
+    }, {
+      x: 32,
+      y: 32
+    }, {
+      x: 40,
+      y: 32
+    }],
+    RUNNING: [{
+      x: 0,
+      y: 151
+    }],
+    JUMP: [{
+      x: 0,
+      y: 151
+    }],
+    HIT: [{
+      x: 0,
+      y: 151
+    }]
+  },
   x: 400,
   y: 0,
   vx: 0,
@@ -492,14 +566,41 @@ var Char = {
     if (input.estado.andandoDireita) {
       this.vx = +this._VELOCIDADE_X;
       this.facingLeft = false;
+      this.currentAnimationCicle = 'WALKING';
     } else if (input.estado.andandoEsquerda) {
       this.vx = -this._VELOCIDADE_X;
       this.facingLeft = true;
-    } else this.vx = 0;
+      this.currentAnimationCicle = 'WALKING';
+    } else {
+      this.vx = 0;
+      this.currentAnimationCicle = 'IDLE';
+    }
 
     if (input.estado.pulando) {
       this.vy = this._VELOCIDADE_PULO;
       input.estado.pulando = false;
+    }
+
+    if (input.estado.atirando) {
+      input.estado.atirando = false;
+      this.atirar();
+    }
+
+    this.animate(input);
+    this.updateBullets();
+  },
+  animate: function animate(input) {
+    var now = Date.now();
+
+    if (now - this.lastAnimationUpdate > this.maxFrameTime) {
+      this.lastAnimationUpdate = now;
+      var maxFrames = this.animationFrames[this.currentAnimationCicle].length - 1;
+
+      if (this.currentAnimationFrame < maxFrames) {
+        this.currentAnimationFrame++;
+        this.sx = this.animationFrames[this.currentAnimationCicle][this.currentAnimationFrame].x;
+        this.sy = this.animationFrames[this.currentAnimationCicle][this.currentAnimationFrame].y;
+      } else this.currentAnimationFrame = 0;
     }
   },
   move: function move(input) {
@@ -508,6 +609,24 @@ var Char = {
   cair: function cair() {
     if (this.vy < this._VELOCIDADE_Y) this.vy += .8;
     this.y += this.vy;
+  },
+  atirar: function atirar() {
+    if (this.bullets.length < this._MAX_BULLETS) {
+      this.bullets.push({
+        x: this.x,
+        y: this.y,
+        vx: this._BULLET_SPEED
+      });
+    }
+  },
+  updateBullets: function updateBullets() {
+    this.bullets = this.bullets.map(function (b) {
+      b.x += b.vx;
+
+      if (b.x >= 0 && b.x <= window.innerWidth) {
+        return b;
+      }
+    });
   },
   checkCollisionX: function checkCollisionX(mapa, larguraTileAtual, alturaTileAtual) {
     var xAtual = Math.floor(parseInt(this.x / larguraTileAtual));
@@ -722,7 +841,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52055" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49791" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

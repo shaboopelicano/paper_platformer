@@ -70,8 +70,8 @@ class Renderer {
 
         if (player.facingLeft) {
             this.ctx.save();
-            this.ctx.translate(player.x,player.y);
-            this.ctx.scale(-1,1);
+            this.ctx.translate(player.x, player.y);
+            this.ctx.scale(-1, 1);
 
             this.ctx.drawImage(
                 Assets.imgs['Player'],
@@ -100,8 +100,21 @@ class Renderer {
                 this.alturaTileAtual,
             );
         }
+
+        this.drawBullets(player.bullets);
     }
 
+    drawBullets(bullets) {
+        this.ctx.fillStyle = 0xFF0000;
+        bullets.forEach(b => {
+            this.ctx.fillRect(
+                b.x,
+                b.y,
+                10,
+                10,
+            );
+        });
+    }
 
     clear() {
         this.ctx.fillStyle = this.Game.CONSTANTES.CLEAR_COLOR;

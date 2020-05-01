@@ -23,6 +23,9 @@ var Input = {
                 this.estado.andandoDireita = false;
                 this.estado.parado = true;
                 break;
+            case 'Control':
+                this.estado.atirando = false;
+                break;
         }
     },
     keyDown: function (key) {
@@ -40,6 +43,10 @@ var Input = {
             case 'w':
                 if (!this.estado.pulando)
                     this.estado.pulando = true;
+                break;
+            case 'Control':
+                this.estado.atirando = true;
+                break;
 
         }
     },
