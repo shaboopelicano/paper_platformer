@@ -8,6 +8,7 @@ class Renderer {
         this.larguraTileAtual;
         this.alturaTileAtual;
         this.tileGrama = new Tile();
+        this.currentLevel = Game.levels[Game.currentLevelIndex];
 
         const auxCanvas = document.createElement('canvas');
         auxCanvas.width = window.innerWidth;
@@ -23,16 +24,23 @@ class Renderer {
 
     }
 
-    draw(objetos) {
-        this.drawBG(objetos.mapaAtual);
-        this.drawObjects(objetos.mapaAtual);
-        this.drawPlayer(objetos.player);
+    draw(level) {
+        this.ctx.globalAlpha = 1;
+        this.drawBG(level);
+        this.drawObjects(level);
+        this.drawPlayer(level);
     }
 
-    drawObjects(mapa = null) {
+    drawObjects(level = null) {
 
-        var larguraTile = parseInt(Math.ceil(window.innerWidth / mapa.larguraMapa));
-        var alturaTile = parseInt(Math.ceil(window.innerHeight / mapa.alturaMapa));
+        var mapa = level.mapa;
+        var camera = level.camera;
+
+        var larguraTile = camera.tileSize;
+        var alturaTile = camera.tileSize;
+
+        // var larguraTile = parseInt(Math.ceil(window.innerWidth / mapa.larguraMapa));
+        // var alturaTile = parseInt(Math.ceil(window.innerHeight / mapa.alturaMapa));
 
         this.larguraTileAtual = larguraTile;
         this.alturaTileAtual = alturaTile;
@@ -45,7 +53,7 @@ class Renderer {
                             Assets.imgs['Tiles'],
                             0, 152,
                             8, 8,
-                            larguraTile * j, alturaTile * i,
+                            larguraTile * j + camera.x, alturaTile * i + camera.y,
                             larguraTile, alturaTile
                         );
                     }
@@ -63,7 +71,9 @@ class Renderer {
         
     }
 
-    drawBG(mapa = null) {
+    drawBG(level) {
+
+        var mapa = level.mapa;
 
         var larguraTile = parseInt(Math.ceil(window.innerWidth / mapa.larguraMapa));
         var alturaTile = parseInt(Math.ceil(window.innerHeight / mapa.alturaMapa));
@@ -85,11 +95,14 @@ class Renderer {
         
     }
 
-    drawPlayer(player = null) {
+    drawPlayer(level = null) {
+
+        var player = level.player;
+        var camera = level.camera;
 
         if (player.facingLeft) {
             this.ctx.save();
-            this.ctx.translate(player.x, player.y);
+            this.ctx.translate(player.xTela, player.yTela);
             this.ctx.scale(-1, 1);
 
             this.ctx.drawImage(
@@ -98,7 +111,7 @@ class Renderer {
                 player.sy,
                 player.sw,
                 player.sh,
-                0,
+                0 - camera.tileSize,
                 0,
                 this.larguraTileAtual,
                 this.alturaTileAtual,
@@ -113,8 +126,8 @@ class Renderer {
                 player.sy,
                 player.sw,
                 player.sh,
-                player.x,
-                player.y,
+                player.xTela,
+                player.yTela,
                 this.larguraTileAtual,
                 this.alturaTileAtual,
             );

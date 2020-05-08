@@ -308,6 +308,7 @@ var Renderer = /*#__PURE__*/function () {
     this.larguraTileAtual;
     this.alturaTileAtual;
     this.tileGrama = new _Tile.default();
+    this.currentLevel = Game.levels[Game.currentLevelIndex];
     var auxCanvas = document.createElement('canvas');
     auxCanvas.width = window.innerWidth;
     auxCanvas.height = window.innerHeight;
@@ -322,17 +323,22 @@ var Renderer = /*#__PURE__*/function () {
 
   _createClass(Renderer, [{
     key: "draw",
-    value: function draw(objetos) {
-      this.drawBG(objetos.mapaAtual);
-      this.drawObjects(objetos.mapaAtual);
-      this.drawPlayer(objetos.player);
+    value: function draw(level) {
+      this.ctx.globalAlpha = 1;
+      this.drawBG(level);
+      this.drawObjects(level);
+      this.drawPlayer(level);
     }
   }, {
     key: "drawObjects",
     value: function drawObjects() {
-      var mapa = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var larguraTile = parseInt(Math.ceil(window.innerWidth / mapa.larguraMapa));
-      var alturaTile = parseInt(Math.ceil(window.innerHeight / mapa.alturaMapa));
+      var level = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var mapa = level.mapa;
+      var camera = level.camera;
+      var larguraTile = camera.tileSize;
+      var alturaTile = camera.tileSize; // var larguraTile = parseInt(Math.ceil(window.innerWidth / mapa.larguraMapa));
+      // var alturaTile = parseInt(Math.ceil(window.innerHeight / mapa.alturaMapa));
+
       this.larguraTileAtual = larguraTile;
       this.alturaTileAtual = alturaTile;
 
@@ -340,7 +346,7 @@ var Renderer = /*#__PURE__*/function () {
         for (var j = 0; j < mapa.larguraMapa; j++) {
           try {
             if (mapa.map[i][j] != 0) {
-              this.auxCtx.drawImage(_Assets.default.imgs['Tiles'], 0, 152, 8, 8, larguraTile * j, alturaTile * i, larguraTile, alturaTile);
+              this.auxCtx.drawImage(_Assets.default.imgs['Tiles'], 0, 152, 8, 8, larguraTile * j + camera.x, alturaTile * i + camera.y, larguraTile, alturaTile);
             }
           } catch (e) {
             console.error(e);
@@ -355,8 +361,8 @@ var Renderer = /*#__PURE__*/function () {
     }
   }, {
     key: "drawBG",
-    value: function drawBG() {
-      var mapa = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+    value: function drawBG(level) {
+      var mapa = level.mapa;
       var larguraTile = parseInt(Math.ceil(window.innerWidth / mapa.larguraMapa));
       var alturaTile = parseInt(Math.ceil(window.innerHeight / mapa.alturaMapa));
       this.larguraTileAtual = larguraTile;
@@ -373,16 +379,18 @@ var Renderer = /*#__PURE__*/function () {
   }, {
     key: "drawPlayer",
     value: function drawPlayer() {
-      var player = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var level = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var player = level.player;
+      var camera = level.camera;
 
       if (player.facingLeft) {
         this.ctx.save();
-        this.ctx.translate(player.x, player.y);
+        this.ctx.translate(player.xTela, player.yTela);
         this.ctx.scale(-1, 1);
-        this.ctx.drawImage(_Assets.default.imgs['Player'], player.sx, player.sy, player.sw, player.sh, 0, 0, this.larguraTileAtual, this.alturaTileAtual);
+        this.ctx.drawImage(_Assets.default.imgs['Player'], player.sx, player.sy, player.sw, player.sh, 0 - camera.tileSize, 0, this.larguraTileAtual, this.alturaTileAtual);
         this.ctx.restore();
       } else {
-        this.ctx.drawImage(_Assets.default.imgs['Player'], player.sx, player.sy, player.sw, player.sh, player.x, player.y, this.larguraTileAtual, this.alturaTileAtual);
+        this.ctx.drawImage(_Assets.default.imgs['Player'], player.sx, player.sy, player.sw, player.sh, player.xTela, player.yTela, this.larguraTileAtual, this.alturaTileAtual);
       }
 
       this.drawBullets(player.bullets);
@@ -427,6 +435,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+
+var _Game = _interopRequireDefault(require("./Game"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 var Input = {
   iniciarInput: function iniciarInput() {
     window.onkeydown = function (e) {
@@ -438,17 +451,43 @@ var Input = {
     }.bind(this);
   },
   tratarInput: function tratarInput(e) {
-    switch (e.type) {
-      case 'keyup':
-        this.keyUp(e.key);
+    switch (_Game.default.estadoGameAtual) {
+      case _Game.default.Estados.PAUSADO:
+        switch (e.type) {
+          case 'keydown':
+            this.keyDownPausado(e.key);
+            break;
+
+          case 'keyup':
+            this.keyUpPausado(e.key);
+            break;
+        }
+
         break;
 
-      case 'keydown':
-        this.keyDown(e.key);
+      case _Game.default.Estados.RUNNING:
+        switch (e.type) {
+          case 'keydown':
+            this.keyDownRunning(e.key);
+            break;
+
+          case 'keyup':
+            this.keyUpRunning(e.key);
+            break;
+        }
+
         break;
     }
   },
-  keyUp: function keyUp(key) {
+  keyUpPausado: function keyUpPausado(key) {},
+  keyDownPausado: function keyDownPausado(key) {
+    switch (key) {
+      case 'Escape':
+        _Game.default.estadoGameAtual = _Game.default.Estados.RUNNING;
+        break;
+    }
+  },
+  keyUpRunning: function keyUpRunning(key) {
     switch (key) {
       case 'a':
         this.estado.andandoEsquerda = false;
@@ -469,7 +508,7 @@ var Input = {
         break;
     }
   },
-  keyDown: function keyDown(key) {
+  keyDownRunning: function keyDownRunning(key) {
     switch (key) {
       case 'a':
         this.estado.andandoEsquerda = true;
@@ -494,6 +533,10 @@ var Input = {
       case 'Shift':
         this.estado.correndo = true;
         break;
+
+      case 'Escape':
+        _Game.default.estadoGameAtual = _Game.default.Estados.PAUSADO;
+        break;
     }
   },
   estado: {
@@ -506,7 +549,143 @@ var Input = {
 };
 var _default = Input;
 exports.default = _default;
-},{}],"src/Char.js":[function(require,module,exports) {
+},{"./Game":"src/Game.js"}],"src/map.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var Map = /*#__PURE__*/function () {
+  function Map(mapSource) {
+    _classCallCheck(this, Map);
+
+    this.mapSource = mapSource;
+    this.map = [];
+    this.larguraMapa = 0;
+    this.alturaMapa = 0;
+    this.montarMapa();
+  }
+
+  _createClass(Map, [{
+    key: "montarMapa",
+    value: function montarMapa() {
+      var _INICIO = "#INICIO#\n";
+      var _FIM = "#FIM#";
+      var inicio = this.mapSource.indexOf(_INICIO) + _INICIO.length - 1;
+      var fim = this.mapSource.indexOf(_FIM);
+      this.larguraMapa = this.mapSource.indexOf('\n', inicio) + 1;
+      this.alturaMapa = this.mapSource.substring(inicio, fim - 1).match(/\n/g, '').length;
+      var linha = [];
+
+      for (var i = inicio + 1; i < fim; i++) {
+        if (isNumber(this.mapSource[i])) {
+          linha.push(this.mapSource[i]);
+        } else {
+          this.map.push(linha);
+          linha = [];
+        }
+      }
+    }
+  }]);
+
+  return Map;
+}();
+
+exports.default = Map;
+
+function isNumber(char) {
+  if (char === '0') return true;else if (char === '1') return true;else if (char === '2') return true;else if (char === '3') return true;else if (char === '4') return true;else if (char === '5') return true;else if (char === '6') return true;else if (char === '7') return true;else if (char === '8') return true;else if (char === '9') return true;
+}
+},{}],"src/Camera.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var Camera = /*#__PURE__*/function () {
+  function Camera() {
+    var map = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+    var width = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    var height = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    var tileSize = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 150;
+
+    _classCallCheck(this, Camera);
+
+    this.x = 0;
+    this.y = 0;
+    this.width = width;
+    this.height = height;
+    this.tileSize = tileSize;
+    var _ESPACAMENTO = 300;
+    this._X2_THRESHOLD = window.innerWidth - _ESPACAMENTO;
+    this._X1_THRESHOLD = _ESPACAMENTO;
+  }
+
+  _createClass(Camera, [{
+    key: "mover",
+    value: function mover(player) {
+      var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+      if (player.x >= this._X2_THRESHOLD || player.x < this._X1_THRESHOLD) this.x = this.x - player.vx;
+    }
+  }]);
+
+  return Camera;
+}();
+
+var _default = Camera;
+exports.default = _default;
+},{}],"src/maps/map1.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = "\n#INICIO#\n0001000100\n0000000000\n0100010010\n1111110111\n0000000000\n0000000000\n1110011111\n0000000000\n1111111111\n0000000000\n#FIM#\n";
+exports.default = _default;
+},{}],"src/maps/map2.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = "\n#INICIO#\n0000000000\n0000000000\n0000000000\n0000000000\n0000000000\n0000000000\n1110011111\n0000000000\n1111111111\n0000000000\n#FIM#\n";
+exports.default = _default;
+},{}],"src/maps/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _map = _interopRequireDefault(require("./map1"));
+
+var _map2 = _interopRequireDefault(require("./map2"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var _default = [_map.default, _map2.default];
+exports.default = _default;
+},{"./map1":"src/maps/map1.js","./map2":"src/maps/map2.js"}],"src/Char.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -580,6 +759,8 @@ var Char = {
   },
   x: 400,
   y: 0,
+  xTela: 400,
+  yTela: 0,
   vx: 0,
   vy: 5,
   sx: 1,
@@ -629,11 +810,20 @@ var Char = {
     }
   },
   move: function move(input) {
+    console.log(this.x);
     this.x += this.vx;
+    this.xTela += this.vx;
+
+    if (this.xTela >= window.innerWidth - 300) {
+      this.xTela = window.innerWidth - 300;
+    } else if (this.xTela <= 300) {
+      this.xTela = 300;
+    }
   },
   cair: function cair() {
     if (this.vy < this._VELOCIDADE_Y) this.vy += .8;
     this.y += this.vy;
+    this.yTela += this.vy;
   },
   atirar: function atirar() {
     if (this.bullets.length < this._MAX_BULLETS) {
@@ -690,69 +880,40 @@ var Char = {
 };
 var _default = Char;
 exports.default = _default;
-},{"./Assets":"src/Assets.js"}],"src/Map.js":[function(require,module,exports) {
+},{"./Assets":"src/Assets.js"}],"src/Level.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+
+var _map = _interopRequireDefault(require("./map"));
+
+var _Camera = _interopRequireDefault(require("./Camera"));
+
+var _maps = _interopRequireDefault(require("./maps"));
+
+var _Char = _interopRequireDefault(require("./Char"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+var Level = function Level() {
+  var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+  _classCallCheck(this, Level);
 
-var Map = /*#__PURE__*/function () {
-  function Map(mapSource) {
-    _classCallCheck(this, Map);
+  this.player = _Char.default;
+  this.objetos = [];
+  this.camera = new _Camera.default(_maps.default[index]);
+  this.mapa = new _map.default(_maps.default[index]);
+};
 
-    this.mapSource = mapSource;
-    this.map = [];
-    this.montarMapa();
-  }
-
-  _createClass(Map, [{
-    key: "montarMapa",
-    value: function montarMapa() {
-      var _INICIO = "#INICIO#\n";
-      var _FIM = "#FIM#";
-      var inicio = this.mapSource.indexOf(_INICIO) + _INICIO.length - 1;
-      var fim = this.mapSource.indexOf(_FIM);
-      this.larguraMapa = this.mapSource.indexOf('\n', inicio) + 1;
-      this.alturaMapa = this.mapSource.substring(inicio, fim - 1).match(/\n/g, '').length;
-      var linha = [];
-
-      for (var i = inicio + 1; i < fim; i++) {
-        if (isNumber(this.mapSource[i])) {
-          linha.push(this.mapSource[i]);
-        } else {
-          this.map.push(linha);
-          linha = [];
-        }
-      }
-    }
-  }]);
-
-  return Map;
-}();
-
-exports.default = Map;
-
-function isNumber(char) {
-  if (char === '0') return true;else if (char === '1') return true;else if (char === '2') return true;else if (char === '3') return true;else if (char === '4') return true;else if (char === '5') return true;else if (char === '6') return true;else if (char === '7') return true;else if (char === '8') return true;else if (char === '9') return true;
-}
-},{}],"src/maps/map1.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-var _default = "\n#INICIO#\n0001000100\n0000000000\n0100010010\n1111110111\n0000000000\n0000000000\n1110011111\n0000000000\n1111111111\n0000000000\n#FIM#\n";
+var _default = Level;
 exports.default = _default;
-},{}],"src/Game.js":[function(require,module,exports) {
+},{"./map":"src/map.js","./Camera":"src/Camera.js","./maps":"src/maps/index.js","./Char":"src/Char.js"}],"src/Game.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -764,11 +925,7 @@ var _Renderer = _interopRequireDefault(require("./Renderer"));
 
 var _Input = _interopRequireDefault(require("./Input"));
 
-var _Char = _interopRequireDefault(require("./Char"));
-
-var _Map = _interopRequireDefault(require("./Map"));
-
-var _map = _interopRequireDefault(require("./maps/map1.js"));
+var _Level = _interopRequireDefault(require("./Level"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -779,13 +936,26 @@ var Game = {
     CLEAR_COLOR: 0x000000,
     TILE_SIZE: 40
   },
-  objetos: [],
+  Estados: {
+    INTRO: 0,
+    MENU: 1,
+    ANIMACAO: 2,
+    PAUSADO: 3,
+    RUNNING: 4
+  },
+  currentAlpha: 1.0,
+  estadoGameAtual: 4,
+  levels: [],
+  currentLevelIndex: 0,
   iniciarTudo: function iniciarTudo() {
+    this.iniciarLevels();
     this.iniciarCanvas();
-    this.iniciarObjetos();
     this.renderer = new _Renderer.default(this.ctx, this);
     this.input = _Input.default;
     this.input.iniciarInput();
+  },
+  iniciarLevels: function iniciarLevels() {
+    this.levels.push(new _Level.default(0));
   },
   iniciarCanvas: function iniciarCanvas() {
     var canvas = document.createElement('canvas');
@@ -796,33 +966,56 @@ var Game = {
     this.ctx = canvas.getContext('2d');
     this.ctx.imageSmoothingEnabled = false;
   },
-  iniciarObjetos: function iniciarObjetos() {
-    this.objetos.mapaAtual = new _Map.default(_map.default);
-    this.objetos.player = _Char.default;
-  },
   update: function update() {
-    this.objetos.player.update(this.input);
+    var levelAtual = this.levels[this.currentLevelIndex]; // Movendo camera
 
-    if (!this.objetos.player.checkCollisionX(this.objetos.mapaAtual, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
-      this.objetos.player.move(this.input);
+    if (levelAtual.player.vx != 0) {
+      levelAtual.camera.mover(levelAtual.player);
     }
 
-    if (!this.objetos.player.checkCollisionY(this.objetos.mapaAtual, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
-      this.objetos.player.cair();
+    levelAtual.player.update(this.input);
+
+    if (!levelAtual.player.checkCollisionX(levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+      levelAtual.player.move(this.input);
+    }
+
+    if (!levelAtual.player.checkCollisionY(levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+      levelAtual.player.cair();
     }
   },
   loop: function loop() {
-    this.update();
-    this.renderer.clear();
-    this.renderer.draw(this.objetos);
+    switch (this.estadoGameAtual) {
+      case Game.Estados.PAUSADO:
+        this.pausedLoop();
+        break;
+
+      case Game.Estados.RUNNING:
+        this.mainLoop();
+        break;
+    }
+
     requestAnimationFrame(function () {
       this.loop();
     }.bind(this));
+  },
+  pausedLoop: function pausedLoop() {
+    if (this.currentAlpha > .5) {
+      this.currentAlpha -= .01;
+      this.ctx.globalAlpha = this.currentAlpha;
+    }
+
+    this.ctx.fillStyle = "#6F8B6E";
+    this.ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+  },
+  mainLoop: function mainLoop() {
+    this.update();
+    this.renderer.clear();
+    this.renderer.draw(this.levels[this.currentLevelIndex]);
   }
 };
 var _default = Game;
 exports.default = _default;
-},{"./Renderer":"src/Renderer.js","./Input":"src/Input.js","./Char":"src/Char.js","./Map":"src/Map.js","./maps/map1.js":"src/maps/map1.js"}],"src/index.js":[function(require,module,exports) {
+},{"./Renderer":"src/Renderer.js","./Input":"src/Input.js","./Level":"src/Level.js"}],"src/index.js":[function(require,module,exports) {
 "use strict";
 
 require("./styles.css");
@@ -866,7 +1059,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62254" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54559" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

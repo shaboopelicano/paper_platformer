@@ -2,7 +2,7 @@ import Assets from './Assets';
 
 var Char = {
     _VELOCIDADE_X: 5,
-    _VELOCIDADE_ADICIONAL_X : 3,
+    _VELOCIDADE_ADICIONAL_X: 3,
     _VELOCIDADE_Y: 5,
     _VELOCIDADE_PULO: -15,
     _MAX_BULLETS: 3,
@@ -41,6 +41,8 @@ var Char = {
     },
     x: 400,
     y: 0,
+    xTela: 400,
+    yTela: 0,
     vx: 0,
     vy: 5,
     sx: 1,
@@ -53,7 +55,8 @@ var Char = {
             this.facingLeft = false;
             this.currentAnimationCicle = 'WALKING';
         }
-        else if (input.estado.andandoEsquerda) {DOMError
+        else if (input.estado.andandoEsquerda) {
+            DOMError
             this.vx = -(this._VELOCIDADE_X + (input.estado.correndo ? this._VELOCIDADE_ADICIONAL_X : 0));
             this.facingLeft = true;
             this.currentAnimationCicle = 'WALKING';
@@ -91,12 +94,22 @@ var Char = {
         }
     },
     move: function (input) {
+        console.log(this.x);
         this.x += this.vx;
+        this.xTela += this.vx;
+        if (this.xTela >= window.innerWidth - 300) {
+            this.xTela = window.innerWidth - 300;
+        }
+        else if (this.xTela <= 300) {
+            this.xTela = 300;
+        }
+
     },
     cair: function () {
         if (this.vy < this._VELOCIDADE_Y)
             this.vy += .8;
         this.y += this.vy;
+        this.yTela += this.vy;
     },
     atirar: function () {
         if (this.bullets.length < this._MAX_BULLETS) {

@@ -3,6 +3,8 @@ export default class Map {
     constructor(mapSource) {
         this.mapSource = mapSource;
         this.map = [];
+        this.larguraMapa = 0;
+        this.alturaMapa = 0;
         this.montarMapa();
     }
 

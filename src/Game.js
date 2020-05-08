@@ -1,8 +1,6 @@
 import Renderer from './Renderer';
 import Input from './Input';
-import Char from './Char';
-import Map from './Map';
-import map1 from './maps/map1.js';
+import Level from './Level';
 
 var Game = {
     CONSTANTES: {
@@ -11,13 +9,27 @@ var Game = {
         CLEAR_COLOR: 0x000000,
         TILE_SIZE: 40,
     },
-    objetos: [],
+    Estados: {
+        INTRO: 0,
+        MENU: 1,
+        ANIMACAO: 2,
+        PAUSADO: 3,
+        RUNNING: 4
+    },
+    currentAlpha:1.0,
+    estadoGameAtual: 4,
+    levels: [],
+    currentLevelIndex: 0,
+
     iniciarTudo: function () {
+        this.iniciarLevels();
         this.iniciarCanvas();
-        this.iniciarObjetos();
         this.renderer = new Renderer(this.ctx, this);
         this.input = Input;
         this.input.iniciarInput();
+    },
+    iniciarLevels() {
+        this.levels.push(new Level(0));
     },
     iniciarCanvas: function () {
         var canvas = document.createElement('canvas');
@@ -28,26 +40,44 @@ var Game = {
         this.ctx = canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
     },
-    iniciarObjetos: function () {
-        this.objetos.mapaAtual = new Map(map1);
-        this.objetos.player = Char
-    },
     update: function () {
-        this.objetos.player.update(this.input);
-        if (!this.objetos.player.checkCollisionX(this.objetos.mapaAtual, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)){
-            this.objetos.player.move(this.input);
+        var levelAtual = this.levels[this.currentLevelIndex];
+
+        // Movendo camera
+        if (levelAtual.player.vx != 0) {
+            levelAtual.camera.mover(levelAtual.player);
         }
-        if (!this.objetos.player.checkCollisionY(this.objetos.mapaAtual, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)){
-            this.objetos.player.cair();
+
+        levelAtual.player.update(this.input);
+        if (!levelAtual.player.checkCollisionX(levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+            levelAtual.player.move(this.input);
         }
-        
+        if (!levelAtual.player.checkCollisionY(levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+            levelAtual.player.cair();
+        }
+
     },
     loop: function () {
+        switch (this.estadoGameAtual) {
+            case Game.Estados.PAUSADO: this.pausedLoop(); break;
+            case Game.Estados.RUNNING: this.mainLoop(); break;
+        }
+        requestAnimationFrame(function () { this.loop() }.bind(this));
+    },
+    pausedLoop: function () {
+        if (this.currentAlpha > .5){
+            this.currentAlpha -= .01;
+            this.ctx.globalAlpha = this.currentAlpha;
+        }
+        this.ctx.fillStyle = "#6F8B6E";
+        this.ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+    },
+    mainLoop: function () {
         this.update();
         this.renderer.clear();
-        this.renderer.draw(this.objetos);
-        requestAnimationFrame(function () { this.loop() }.bind(this));
+        this.renderer.draw(this.levels[this.currentLevelIndex]);
     }
+
 
 }
 

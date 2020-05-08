@@ -1,3 +1,5 @@
+import Game from './Game';
+
 var Input = {
     iniciarInput: function () {
         window.onkeydown = function (e) {
@@ -8,12 +10,32 @@ var Input = {
         }.bind(this);
     },
     tratarInput: function (e) {
-        switch (e.type) {
-            case 'keyup': this.keyUp(e.key); break;
-            case 'keydown': this.keyDown(e.key); break;
+        switch (Game.estadoGameAtual) {
+            case Game.Estados.PAUSADO:
+                switch (e.type) {
+                    case 'keydown': this.keyDownPausado(e.key); break;
+                    case 'keyup': this.keyUpPausado(e.key); break;
+                }
+                break;
+            case Game.Estados.RUNNING:
+                switch (e.type) {
+                    case 'keydown': this.keyDownRunning(e.key); break;
+                    case 'keyup': this.keyUpRunning(e.key); break;
+                }
+                break;
         }
     },
-    keyUp: function (key) {
+    keyUpPausado: function (key) {
+        
+    },
+    keyDownPausado: function (key) {
+        switch (key) {
+            case 'Escape':
+                Game.estadoGameAtual = Game.Estados.RUNNING;
+                break;
+        }
+    },
+    keyUpRunning: function (key) {
         switch (key) {
             case 'a':
                 this.estado.andandoEsquerda = false;
@@ -31,7 +53,7 @@ var Input = {
                 break;
         }
     },
-    keyDown: function (key) {
+    keyDownRunning: function (key) {
         switch (key) {
             case 'a':
                 this.estado.andandoEsquerda = true;
@@ -53,7 +75,9 @@ var Input = {
             case 'Shift':
                 this.estado.correndo = true;
                 break;
-
+            case 'Escape':
+                Game.estadoGameAtual = Game.Estados.PAUSADO;
+                break;
         }
     },
     estado: {
