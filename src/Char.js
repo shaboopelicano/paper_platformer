@@ -2,17 +2,18 @@ import Assets from './Assets';
 
 var Char = {
     _VELOCIDADE_X: 5,
+    _VELOCIDADE_ADICIONAL_X : 3,
     _VELOCIDADE_Y: 5,
     _VELOCIDADE_PULO: -15,
-    _MAX_BULLETS : 3,
-    _BULLET_SPEED : 10,
+    _MAX_BULLETS: 3,
+    _BULLET_SPEED: 10,
     image: Assets.imgs['Player'],
     facingLeft: false,
     currentAnimationCicle: 'IDLE',
     currentAnimationFrame: 0,
     lastAnimationUpdate: 0,
     maxFrameTime: 100,
-    bullets:[],
+    bullets: [],
     animationFrames: {
         IDLE: [
             { x: 1, y: 57 },
@@ -48,16 +49,16 @@ var Char = {
     sh: 7,
     update: function (input) {
         if (input.estado.andandoDireita) {
-            this.vx = +this._VELOCIDADE_X;
+            this.vx = +this._VELOCIDADE_X + (input.estado.correndo ? this._VELOCIDADE_ADICIONAL_X : 0);
             this.facingLeft = false;
             this.currentAnimationCicle = 'WALKING';
         }
-        else if (input.estado.andandoEsquerda) {
-            this.vx = -this._VELOCIDADE_X;
+        else if (input.estado.andandoEsquerda) {DOMError
+            this.vx = -(this._VELOCIDADE_X + (input.estado.correndo ? this._VELOCIDADE_ADICIONAL_X : 0));
             this.facingLeft = true;
             this.currentAnimationCicle = 'WALKING';
         }
-        else{
+        else {
             this.vx = 0;
             this.currentAnimationCicle = 'IDLE';
         }
@@ -67,8 +68,8 @@ var Char = {
             input.estado.pulando = false;
         }
 
-        if(input.estado.atirando){
-            input.estado.atirando=false;
+        if (input.estado.atirando) {
+            input.estado.atirando = false;
             this.atirar();
         }
 
@@ -97,18 +98,18 @@ var Char = {
             this.vy += .8;
         this.y += this.vy;
     },
-    atirar:function(){
-        if(this.bullets.length < this._MAX_BULLETS){
-            this.bullets.push({x:this.x,y:this.y,vx:this._BULLET_SPEED});
+    atirar: function () {
+        if (this.bullets.length < this._MAX_BULLETS) {
+            this.bullets.push({ x: this.x, y: this.y, vx: this._BULLET_SPEED });
         }
     },
-    updateBullets:function(){
-        this.bullets = this.bullets.map(function(b){
+    updateBullets: function () {
+        this.bullets = this.bullets.map(function (b) {
             b.x += b.vx;
-            if(b.x >=0 && b.x  <= window.innerWidth){
+            if (b.x >= 0 && b.x <= window.innerWidth) {
                 return b;
             }
-        }) 
+        })
 
 
     },

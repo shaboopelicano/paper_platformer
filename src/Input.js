@@ -26,6 +26,9 @@ var Input = {
             case 'Control':
                 this.estado.atirando = false;
                 break;
+            case 'Shift':
+                this.estado.correndo = false;
+                break;
         }
     },
     keyDown: function (key) {
@@ -47,6 +50,9 @@ var Input = {
             case 'Control':
                 this.estado.atirando = true;
                 break;
+            case 'Shift':
+                this.estado.correndo = true;
+                break;
 
         }
     },
@@ -55,6 +61,7 @@ var Input = {
         andandoEsquerda: false,
         parado: true,
         pulando: false,
+        correndo: false,
     }
 }
 

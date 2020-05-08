@@ -9,7 +9,20 @@ class Renderer {
         this.alturaTileAtual;
         this.tileGrama = new Tile();
 
+        const auxCanvas = document.createElement('canvas');
+        auxCanvas.width = window.innerWidth;
+        auxCanvas.height = window.innerHeight;
+        auxCanvas.style.zIndex = -1;
+        auxCanvas.style.position = 'absolute';
+        this.auxCtx = auxCanvas.getContext('2d');
+        this.auxCtx.imageSmoothingEnabled = false;
+        document.body.appendChild(auxCanvas);
+
+        this.auxCanvas = auxCanvas;
+        this.x = 0;
+
     }
+
     draw(objetos) {
         this.drawBG(objetos.mapaAtual);
         this.drawObjects(objetos.mapaAtual);
@@ -28,7 +41,7 @@ class Renderer {
             for (var j = 0; j < mapa.larguraMapa; j++) {
                 try {
                     if (mapa.map[i][j] != 0) {
-                        this.ctx.drawImage(
+                        this.auxCtx.drawImage(
                             Assets.imgs['Tiles'],
                             0, 152,
                             8, 8,
@@ -45,6 +58,9 @@ class Renderer {
                 }
             }
         }
+
+        this.ctx.drawImage(this.auxCanvas,this.x,0);
+        
     }
 
     drawBG(mapa = null) {
@@ -57,13 +73,16 @@ class Renderer {
 
         for (var i = 0; i < mapa.alturaMapa; i++) {
             for (var j = 0; j < mapa.larguraMapa; j++) {
-                this.ctx.drawImage(
+                this.auxCtx.drawImage(
                     Assets.imgs['bg'],
                     larguraTile * j, alturaTile * i,
                     larguraTile, alturaTile
                 );
             }
         }
+
+        this.ctx.drawImage(this.auxCanvas,this.x,0);
+        
     }
 
     drawPlayer(player = null) {

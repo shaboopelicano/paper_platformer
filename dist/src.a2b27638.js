@@ -308,6 +308,16 @@ var Renderer = /*#__PURE__*/function () {
     this.larguraTileAtual;
     this.alturaTileAtual;
     this.tileGrama = new _Tile.default();
+    var auxCanvas = document.createElement('canvas');
+    auxCanvas.width = window.innerWidth;
+    auxCanvas.height = window.innerHeight;
+    auxCanvas.style.zIndex = -1;
+    auxCanvas.style.position = 'absolute';
+    this.auxCtx = auxCanvas.getContext('2d');
+    this.auxCtx.imageSmoothingEnabled = false;
+    document.body.appendChild(auxCanvas);
+    this.auxCanvas = auxCanvas;
+    this.x = 0;
   }
 
   _createClass(Renderer, [{
@@ -330,7 +340,7 @@ var Renderer = /*#__PURE__*/function () {
         for (var j = 0; j < mapa.larguraMapa; j++) {
           try {
             if (mapa.map[i][j] != 0) {
-              this.ctx.drawImage(_Assets.default.imgs['Tiles'], 0, 152, 8, 8, larguraTile * j, alturaTile * i, larguraTile, alturaTile);
+              this.auxCtx.drawImage(_Assets.default.imgs['Tiles'], 0, 152, 8, 8, larguraTile * j, alturaTile * i, larguraTile, alturaTile);
             }
           } catch (e) {
             console.error(e);
@@ -340,6 +350,8 @@ var Renderer = /*#__PURE__*/function () {
           }
         }
       }
+
+      this.ctx.drawImage(this.auxCanvas, this.x, 0);
     }
   }, {
     key: "drawBG",
@@ -352,9 +364,11 @@ var Renderer = /*#__PURE__*/function () {
 
       for (var i = 0; i < mapa.alturaMapa; i++) {
         for (var j = 0; j < mapa.larguraMapa; j++) {
-          this.ctx.drawImage(_Assets.default.imgs['bg'], larguraTile * j, alturaTile * i, larguraTile, alturaTile);
+          this.auxCtx.drawImage(_Assets.default.imgs['bg'], larguraTile * j, alturaTile * i, larguraTile, alturaTile);
         }
       }
+
+      this.ctx.drawImage(this.auxCanvas, this.x, 0);
     }
   }, {
     key: "drawPlayer",
@@ -449,6 +463,10 @@ var Input = {
       case 'Control':
         this.estado.atirando = false;
         break;
+
+      case 'Shift':
+        this.estado.correndo = false;
+        break;
     }
   },
   keyDown: function keyDown(key) {
@@ -472,13 +490,18 @@ var Input = {
       case 'Control':
         this.estado.atirando = true;
         break;
+
+      case 'Shift':
+        this.estado.correndo = true;
+        break;
     }
   },
   estado: {
     andandoDireita: false,
     andandoEsquerda: false,
     parado: true,
-    pulando: false
+    pulando: false,
+    correndo: false
   }
 };
 var _default = Input;
@@ -497,6 +520,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var Char = {
   _VELOCIDADE_X: 5,
+  _VELOCIDADE_ADICIONAL_X: 3,
   _VELOCIDADE_Y: 5,
   _VELOCIDADE_PULO: -15,
   _MAX_BULLETS: 3,
@@ -564,11 +588,12 @@ var Char = {
   sh: 7,
   update: function update(input) {
     if (input.estado.andandoDireita) {
-      this.vx = +this._VELOCIDADE_X;
+      this.vx = +this._VELOCIDADE_X + (input.estado.correndo ? this._VELOCIDADE_ADICIONAL_X : 0);
       this.facingLeft = false;
       this.currentAnimationCicle = 'WALKING';
     } else if (input.estado.andandoEsquerda) {
-      this.vx = -this._VELOCIDADE_X;
+      DOMError;
+      this.vx = -(this._VELOCIDADE_X + (input.estado.correndo ? this._VELOCIDADE_ADICIONAL_X : 0));
       this.facingLeft = true;
       this.currentAnimationCicle = 'WALKING';
     } else {
@@ -841,7 +866,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49791" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62254" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
