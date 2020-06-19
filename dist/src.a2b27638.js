@@ -401,7 +401,7 @@ var Renderer = /*#__PURE__*/function () {
       var _this = this;
 
       this.ctx.fillStyle = 0xFF0000;
-      bullets.forEach(function (b) {
+      if (bullets.length > 0) bullets.forEach(function (b) {
         _this.ctx.fillRect(b.x, b.y, 10, 10);
       });
     }
@@ -581,14 +581,15 @@ var Map = /*#__PURE__*/function () {
       var _FIM = "#FIM#";
       var inicio = this.mapSource.indexOf(_INICIO) + _INICIO.length - 1;
       var fim = this.mapSource.indexOf(_FIM);
-      this.larguraMapa = this.mapSource.indexOf('\n', inicio) + 1;
-      this.alturaMapa = this.mapSource.substring(inicio, fim - 1).match(/\n/g, '').length;
+      this.larguraMapa = this.mapSource.indexOf('x', inicio) - inicio - 1;
+      this.alturaMapa = this.mapSource.substring(inicio, fim - 1).match(/x/g, '').length;
+      console.log(this.larguraMapa);
       var linha = [];
 
       for (var i = inicio + 1; i < fim; i++) {
         if (isNumber(this.mapSource[i])) {
           linha.push(this.mapSource[i]);
-        } else {
+        } else if (this.mapSource[i] === 'x') {
           this.map.push(linha);
           linha = [];
         }
@@ -623,7 +624,7 @@ var Camera = /*#__PURE__*/function () {
     var map = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
     var width = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
     var height = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-    var tileSize = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 150;
+    var tileSize = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 60;
 
     _classCallCheck(this, Camera);
 
@@ -632,6 +633,7 @@ var Camera = /*#__PURE__*/function () {
     this.width = width;
     this.height = height;
     this.tileSize = tileSize;
+    this.lastChange = 0;
     var _ESPACAMENTO = 300;
     this._X2_THRESHOLD = window.innerWidth - _ESPACAMENTO;
     this._X1_THRESHOLD = _ESPACAMENTO;
@@ -642,7 +644,18 @@ var Camera = /*#__PURE__*/function () {
     value: function mover(player) {
       var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-      if (player.x >= this._X2_THRESHOLD || player.x < this._X1_THRESHOLD) this.x = this.x - player.vx;
+      this.lastChange -= player.vx; // if (this.x < 0) {
+      //     this.lastChange += player.vx;
+      //     this.x = 0;
+      // }
+
+      if (this.lastChange > this.tileSize) {
+        this.x += this.tileSize;
+        this.lastChange = 0;
+      } else if (this.lastChange < 0) {
+        this.x -= this.tileSize;
+        this.lastChange = this.tileSize;
+      }
     }
   }]);
 
@@ -658,7 +671,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _default = "\n#INICIO#\n0001000100\n0000000000\n0100010010\n1111110111\n0000000000\n0000000000\n1110011111\n0000000000\n1111111111\n0000000000\n#FIM#\n";
+var _default = "\n#INICIO#\n0001000100x\n0000000000x\n0100010010x\n1111110111x\n0000000000x\n0000000000x\n1110011111x\n0000000000x\n1111111111x\n0000000000x\n#FIM#\n";
 exports.default = _default;
 },{}],"src/maps/map2.js":[function(require,module,exports) {
 "use strict";
@@ -667,7 +680,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _default = "\n#INICIO#\n0000000000\n0000000000\n0000000000\n0000000000\n0000000000\n0000000000\n1110011111\n0000000000\n1111111111\n0000000000\n#FIM#\n";
+var _default = "\n#INICIO#\n000000000000000000x\n000000000000000000x\n000000000000000000x\n000000000000000000x\n000000001100000000x\n000000000000000000x\n111001111100000000x\n000000000000000000x\n111111111100011111x\n000000000000000000x\n#FIM#\n";
 exports.default = _default;
 },{}],"src/maps/index.js":[function(require,module,exports) {
 "use strict";
@@ -773,7 +786,6 @@ var Char = {
       this.facingLeft = false;
       this.currentAnimationCicle = 'WALKING';
     } else if (input.estado.andandoEsquerda) {
-      DOMError;
       this.vx = -(this._VELOCIDADE_X + (input.estado.correndo ? this._VELOCIDADE_ADICIONAL_X : 0));
       this.facingLeft = true;
       this.currentAnimationCicle = 'WALKING';
@@ -810,14 +822,15 @@ var Char = {
     }
   },
   move: function move(input) {
-    console.log(this.x);
     this.x += this.vx;
     this.xTela += this.vx;
 
-    if (this.xTela >= window.innerWidth - 300) {
-      this.xTela = window.innerWidth - 300;
-    } else if (this.xTela <= 300) {
-      this.xTela = 300;
+    if (this.xTela >= window.innerWidth) {
+      this.xTela = window.innerWidth;
+      this.x = window.innerWidth;
+    } else if (this.xTela <= 0) {
+      this.xTela = 0;
+      this.x = 0;
     }
   },
   cair: function cair() {
@@ -829,27 +842,34 @@ var Char = {
     if (this.bullets.length < this._MAX_BULLETS) {
       this.bullets.push({
         x: this.x,
-        y: this.y,
-        vx: this._BULLET_SPEED
+        y: this.y + 30,
+        vx: this.facingLeft ? -this._BULLET_SPEED : this._BULLET_SPEED
       });
     }
   },
   updateBullets: function updateBullets() {
-    this.bullets = this.bullets.map(function (b) {
+    var _this = this;
+
+    this.bullets.forEach(function (b) {
       b.x += b.vx;
 
-      if (b.x >= 0 && b.x <= window.innerWidth) {
-        return b;
+      if (b.x < 0 || b.x > window.innerWidth) {
+        _this.bullets.shift();
       }
     });
   },
-  checkCollisionX: function checkCollisionX(mapa, larguraTileAtual, alturaTileAtual) {
-    var xAtual = Math.floor(parseInt(this.x / larguraTileAtual));
-    var yAtual = Math.floor(parseInt(this.y / alturaTileAtual));
+  checkCollisionX: function checkCollisionX(camera, mapa, larguraTileAtual, alturaTileAtual) {
+    var centroTile = {
+      x: parseInt(this.x + larguraTileAtual / 2 - camera.x),
+      y: parseInt(this.y + alturaTileAtual / 2)
+    }; // Coordenadas atuais no mapa
+
+    var xAtual = Math.floor(centroTile.x / larguraTileAtual);
+    var yAtual = Math.floor(centroTile.y / alturaTileAtual);
     var map = mapa.map;
-    var xDirecao;
-    if (this.vx > 0) xDirecao = Math.floor(parseInt((this.x + larguraTileAtual / 2) / larguraTileAtual));else if (this.vx < 0) {
-      xDirecao = Math.floor(parseInt((this.x - larguraTileAtual / 2) / larguraTileAtual));
+    var xDirecao = xAtual;
+    if (this.vx > 0) xDirecao = Math.floor(parseInt((centroTile.x + larguraTileAtual / 2) / larguraTileAtual));else if (this.vx < 0) {
+      xDirecao = Math.floor(parseInt((centroTile.x - larguraTileAtual / 2) / larguraTileAtual));
     }
 
     try {
@@ -858,11 +878,16 @@ var Char = {
       } else return false;
     } catch (e) {}
   },
-  checkCollisionY: function checkCollisionY(mapa, larguraTileAtual, alturaTileAtual) {
-    var xAtual = Math.floor(parseInt(this.x / larguraTileAtual));
-    var yAtual = Math.floor(parseInt(this.y / alturaTileAtual));
+  checkCollisionY: function checkCollisionY(camera, mapa, larguraTileAtual, alturaTileAtual) {
+    var centroTile = {
+      x: parseInt(this.x + larguraTileAtual / 2 - camera.x),
+      y: parseInt(this.y + alturaTileAtual / 2)
+    }; // Coordenadas atuais no mapa
+
+    var xAtual = Math.floor(centroTile.x / larguraTileAtual);
+    var yAtual = Math.floor(centroTile.y / alturaTileAtual);
     var map = mapa.map;
-    var yDirecao;
+    var yDirecao = yAtual;
     if (this.vy > 0) yDirecao = Math.floor(parseInt((this.y + alturaTileAtual) / alturaTileAtual));else if (this.vy < 0) yDirecao = Math.floor(parseInt(this.y / alturaTileAtual));
 
     try {
@@ -913,7 +938,56 @@ var Level = function Level() {
 
 var _default = Level;
 exports.default = _default;
-},{"./map":"src/map.js","./Camera":"src/Camera.js","./maps":"src/maps/index.js","./Char":"src/Char.js"}],"src/Game.js":[function(require,module,exports) {
+},{"./map":"src/map.js","./Camera":"src/Camera.js","./maps":"src/maps/index.js","./Char":"src/Char.js"}],"src/Debugger.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  debugLineColor: '#FF000055',
+  tiles: false,
+  position: false,
+  map: false,
+  debugAll: function debugAll(game) {
+    var currentLevel = game.levels[game.currentLevelIndex];
+    if (this.tiles) this.debugTiles(game.renderer, currentLevel.camera, game.CONSTANTES.LARGURA, game.CONSTANTES.ALTURA);
+    if (this.position) this.debugPosition(currentLevel);
+    if (this.map) this.debugMap(currentLevel);
+  },
+  debugTiles: function debugTiles(renderer, camera, w, h) {
+    var tileSize = camera.tileSize;
+    var ctx = renderer.ctx;
+
+    for (var i = 0; i < w; i += tileSize) {
+      ctx.strokeStyle = this.debugLineColor;
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, h);
+      ctx.stroke();
+      ctx.closePath();
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(w, i);
+      ctx.stroke();
+      ctx.closePath();
+    }
+  },
+  debugPosition: function debugPosition(level) {
+    var p = level.player;
+    var larguraTileAtual, alturaTileAtual;
+    larguraTileAtual = alturaTileAtual = level.camera.tileSize;
+    var xAtual = Math.floor(parseInt((p.x + larguraTileAtual / 2) / larguraTileAtual));
+    var yAtual = Math.floor(parseInt((p.y + alturaTileAtual / 2) / alturaTileAtual));
+    console.log("### DEBUG POSITION - tela(".concat(p.x, ",").concat(p.y, ") mapa(").concat(xAtual, ",").concat(yAtual, ")"));
+  },
+  debugMap: function debugMap(level) {
+    console.log(level.mapa);
+  }
+};
+exports.default = _default;
+},{}],"src/Game.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -926,6 +1000,8 @@ var _Renderer = _interopRequireDefault(require("./Renderer"));
 var _Input = _interopRequireDefault(require("./Input"));
 
 var _Level = _interopRequireDefault(require("./Level"));
+
+var _Debugger = _interopRequireDefault(require("./Debugger"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -947,6 +1023,7 @@ var Game = {
   estadoGameAtual: 4,
   levels: [],
   currentLevelIndex: 0,
+  debug: true,
   iniciarTudo: function iniciarTudo() {
     this.iniciarLevels();
     this.iniciarCanvas();
@@ -955,7 +1032,7 @@ var Game = {
     this.input.iniciarInput();
   },
   iniciarLevels: function iniciarLevels() {
-    this.levels.push(new _Level.default(0));
+    this.levels.push(new _Level.default(1));
   },
   iniciarCanvas: function iniciarCanvas() {
     var canvas = document.createElement('canvas');
@@ -967,19 +1044,15 @@ var Game = {
     this.ctx.imageSmoothingEnabled = false;
   },
   update: function update() {
-    var levelAtual = this.levels[this.currentLevelIndex]; // Movendo camera
+    var levelAtual = this.levels[this.currentLevelIndex];
+    levelAtual.player.update(this.input);
 
-    if (levelAtual.player.vx != 0) {
+    if (!levelAtual.player.checkCollisionX(levelAtual.camera, levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+      levelAtual.player.move(this.input);
       levelAtual.camera.mover(levelAtual.player);
     }
 
-    levelAtual.player.update(this.input);
-
-    if (!levelAtual.player.checkCollisionX(levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
-      levelAtual.player.move(this.input);
-    }
-
-    if (!levelAtual.player.checkCollisionY(levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+    if (!levelAtual.player.checkCollisionY(levelAtual.camera, levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
       levelAtual.player.cair();
     }
   },
@@ -1011,11 +1084,14 @@ var Game = {
     this.update();
     this.renderer.clear();
     this.renderer.draw(this.levels[this.currentLevelIndex]);
+    /* Rodar debug visual */
+
+    if (this.debug) _Debugger.default.debugAll(this);
   }
 };
 var _default = Game;
 exports.default = _default;
-},{"./Renderer":"src/Renderer.js","./Input":"src/Input.js","./Level":"src/Level.js"}],"src/index.js":[function(require,module,exports) {
+},{"./Renderer":"src/Renderer.js","./Input":"src/Input.js","./Level":"src/Level.js","./Debugger":"src/Debugger.js"}],"src/index.js":[function(require,module,exports) {
 "use strict";
 
 require("./styles.css");
@@ -1059,7 +1135,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54559" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49919" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

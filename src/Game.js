@@ -1,6 +1,7 @@
 import Renderer from './Renderer';
 import Input from './Input';
 import Level from './Level';
+import Debugger from './Debugger';
 
 var Game = {
     CONSTANTES: {
@@ -20,7 +21,7 @@ var Game = {
     estadoGameAtual: 4,
     levels: [],
     currentLevelIndex: 0,
-
+    debug:true,
     iniciarTudo: function () {
         this.iniciarLevels();
         this.iniciarCanvas();
@@ -29,7 +30,7 @@ var Game = {
         this.input.iniciarInput();
     },
     iniciarLevels() {
-        this.levels.push(new Level(0));
+        this.levels.push(new Level(1));
     },
     iniciarCanvas: function () {
         var canvas = document.createElement('canvas');
@@ -42,17 +43,13 @@ var Game = {
     },
     update: function () {
         var levelAtual = this.levels[this.currentLevelIndex];
-
-        // Movendo camera
-        if (levelAtual.player.vx != 0) {
+        
+        levelAtual.player.update(this.input);
+        if (!levelAtual.player.checkCollisionX(levelAtual.camera,levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+            levelAtual.player.move(this.input);
             levelAtual.camera.mover(levelAtual.player);
         }
-
-        levelAtual.player.update(this.input);
-        if (!levelAtual.player.checkCollisionX(levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
-            levelAtual.player.move(this.input);
-        }
-        if (!levelAtual.player.checkCollisionY(levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+        if (!levelAtual.player.checkCollisionY(levelAtual.camera,levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
             levelAtual.player.cair();
         }
 
@@ -76,6 +73,9 @@ var Game = {
         this.update();
         this.renderer.clear();
         this.renderer.draw(this.levels[this.currentLevelIndex]);
+        
+        /* Rodar debug visual */
+        if(this.debug)Debugger.debugAll(this);
     }
 
 

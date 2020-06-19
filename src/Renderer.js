@@ -49,6 +49,7 @@ class Renderer {
             for (var j = 0; j < mapa.larguraMapa; j++) {
                 try {
                     if (mapa.map[i][j] != 0) {
+
                         this.auxCtx.drawImage(
                             Assets.imgs['Tiles'],
                             0, 152,
@@ -67,8 +68,8 @@ class Renderer {
             }
         }
 
-        this.ctx.drawImage(this.auxCanvas,this.x,0);
-        
+        this.ctx.drawImage(this.auxCanvas, this.x, 0);
+
     }
 
     drawBG(level) {
@@ -91,8 +92,8 @@ class Renderer {
             }
         }
 
-        this.ctx.drawImage(this.auxCanvas,this.x,0);
-        
+        this.ctx.drawImage(this.auxCanvas, this.x, 0);
+
     }
 
     drawPlayer(level = null) {
@@ -138,14 +139,15 @@ class Renderer {
 
     drawBullets(bullets) {
         this.ctx.fillStyle = 0xFF0000;
-        bullets.forEach(b => {
-            this.ctx.fillRect(
-                b.x,
-                b.y,
-                10,
-                10,
-            );
-        });
+        if (bullets.length > 0)
+            bullets.forEach(b => {
+                this.ctx.fillRect(
+                    b.x,
+                    b.y,
+                    10,
+                    10,
+                );
+            });
     }
 
     clear() {

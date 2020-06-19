@@ -56,7 +56,6 @@ var Char = {
             this.currentAnimationCicle = 'WALKING';
         }
         else if (input.estado.andandoEsquerda) {
-            DOMError
             this.vx = -(this._VELOCIDADE_X + (input.estado.correndo ? this._VELOCIDADE_ADICIONAL_X : 0));
             this.facingLeft = true;
             this.currentAnimationCicle = 'WALKING';
@@ -94,14 +93,17 @@ var Char = {
         }
     },
     move: function (input) {
-        console.log(this.x);
+
         this.x += this.vx;
         this.xTela += this.vx;
-        if (this.xTela >= window.innerWidth - 300) {
-            this.xTela = window.innerWidth - 300;
+
+        if (this.xTela >= window.innerWidth) {
+            this.xTela = window.innerWidth;
+            this.x = window.innerWidth;
         }
-        else if (this.xTela <= 300) {
-            this.xTela = 300;
+        else if (this.xTela <= 0) {
+            this.xTela = 0;
+            this.x = 0;
         }
 
     },
@@ -113,29 +115,34 @@ var Char = {
     },
     atirar: function () {
         if (this.bullets.length < this._MAX_BULLETS) {
-            this.bullets.push({ x: this.x, y: this.y, vx: this._BULLET_SPEED });
+            this.bullets.push({ x: this.x, y: this.y + 30, vx: this.facingLeft ? -this._BULLET_SPEED : this._BULLET_SPEED  });
         }
     },
     updateBullets: function () {
-        this.bullets = this.bullets.map(function (b) {
+        this.bullets.forEach(b=>{
             b.x += b.vx;
-            if (b.x >= 0 && b.x <= window.innerWidth) {
-                return b;
+            if(b.x < 0 || b.x > window.innerWidth){
+                this.bullets.shift();
             }
-        })
-
-
+        });
     },
-    checkCollisionX: function (mapa, larguraTileAtual, alturaTileAtual) {
-        var xAtual = Math.floor(parseInt(this.x / larguraTileAtual));
-        var yAtual = Math.floor(parseInt(this.y / alturaTileAtual));
+    checkCollisionX: function (camera, mapa, larguraTileAtual, alturaTileAtual) {
+
+        var centroTile = {
+            x: parseInt((this.x + larguraTileAtual / 2) - camera.x),
+            y: parseInt(this.y + alturaTileAtual / 2),
+        }
+
+        // Coordenadas atuais no mapa
+        var xAtual = Math.floor(centroTile.x / larguraTileAtual);
+        var yAtual = Math.floor(centroTile.y / alturaTileAtual);
         var map = mapa.map;
 
-        var xDirecao;
+        var xDirecao = xAtual;
         if (this.vx > 0)
-            xDirecao = Math.floor(parseInt((this.x + (larguraTileAtual / 2)) / larguraTileAtual));
+            xDirecao = Math.floor(parseInt((centroTile.x + (larguraTileAtual / 2)) / larguraTileAtual));
         else if (this.vx < 0) {
-            xDirecao = Math.floor(parseInt((this.x - (larguraTileAtual / 2)) / larguraTileAtual));
+            xDirecao = Math.floor(parseInt((centroTile.x - (larguraTileAtual / 2)) / larguraTileAtual));
         }
 
         try {
@@ -149,13 +156,20 @@ var Char = {
 
         }
     },
-    checkCollisionY: function (mapa, larguraTileAtual, alturaTileAtual) {
-        var xAtual = Math.floor(parseInt(this.x / larguraTileAtual));
-        var yAtual = Math.floor(parseInt(this.y / alturaTileAtual));
+    checkCollisionY: function (camera, mapa, larguraTileAtual, alturaTileAtual) {
+
+        var centroTile = {
+            x: parseInt((this.x + larguraTileAtual / 2) - camera.x),
+            y: parseInt(this.y + alturaTileAtual / 2),
+        }
+
+        // Coordenadas atuais no mapa
+        var xAtual = Math.floor(centroTile.x / larguraTileAtual);
+        var yAtual = Math.floor(centroTile.y / alturaTileAtual);
 
         var map = mapa.map;
 
-        var yDirecao;
+        var yDirecao = yAtual;
         if (this.vy > 0)
             yDirecao = Math.floor(parseInt((this.y + alturaTileAtual) / alturaTileAtual));
         else if (this.vy < 0)

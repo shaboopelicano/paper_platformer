@@ -14,20 +14,24 @@ export default class Map {
         var inicio = this.mapSource.indexOf(_INICIO) + _INICIO.length - 1;
         var fim = this.mapSource.indexOf(_FIM);
         
-        this.larguraMapa = this.mapSource.indexOf('\n',inicio) + 1;
-        this.alturaMapa = this.mapSource.substring(inicio,fim - 1).match(/\n/g,'').length;
+        this.larguraMapa = this.mapSource.indexOf('x',inicio) - inicio - 1;
+        this.alturaMapa = this.mapSource.substring(inicio,fim - 1).match(/x/g,'').length;
+        console.log(this.larguraMapa);
+        
 
         var linha = [];
         for (var i = inicio + 1 ; i < fim; i++) {
             if (isNumber(this.mapSource[i])) {
                 linha.push(this.mapSource[i]);
             }
-            else {
+            else if(this.mapSource[i] === 'x'){
                 this.map.push(linha);
                 linha = [];
             }
         }
     }
+
+    
 }
 
 function isNumber(char) {
