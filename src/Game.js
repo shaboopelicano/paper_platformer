@@ -2,6 +2,7 @@ import Renderer from './Renderer';
 import Input from './Input';
 import Level from './Level';
 import Debugger from './Debugger';
+import Animation from './Animation';
 
 var Game = {
     CONSTANTES: {
@@ -17,17 +18,19 @@ var Game = {
         PAUSADO: 3,
         RUNNING: 4
     },
-    currentAlpha:1.0,
-    estadoGameAtual: 4,
+    currentAlpha: 1.0,
+    estadoGameAtual: 2,
     levels: [],
     currentLevelIndex: 0,
-    debug:true,
+    currentAnimation: null,
+    debug: true,
     iniciarTudo: function () {
         this.iniciarLevels();
         this.iniciarCanvas();
         this.renderer = new Renderer(this.ctx, this);
         this.input = Input;
         this.input.iniciarInput();
+        this.currentAnimation = new Animation(this.ctx, 'introAnimation');
     },
     iniciarLevels() {
         this.levels.push(new Level(1));
@@ -43,26 +46,41 @@ var Game = {
     },
     update: function () {
         var levelAtual = this.levels[this.currentLevelIndex];
-        
+
         levelAtual.player.update(this.input);
-        if (!levelAtual.player.checkCollisionX(levelAtual.camera,levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+        if (!levelAtual.player.checkCollisionX(levelAtual.camera, levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
             levelAtual.player.move(this.input);
             levelAtual.camera.mover(levelAtual.player);
         }
-        if (!levelAtual.player.checkCollisionY(levelAtual.camera,levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
+        if (!levelAtual.player.checkCollisionY(levelAtual.camera, levelAtual.mapa, this.renderer.larguraTileAtual, this.renderer.alturaTileAtual)) {
             levelAtual.player.cair();
         }
 
     },
     loop: function () {
         switch (this.estadoGameAtual) {
+            case Game.Estados.ANIMACAO: this.animationLoop(); break;
             case Game.Estados.PAUSADO: this.pausedLoop(); break;
             case Game.Estados.RUNNING: this.mainLoop(); break;
         }
         requestAnimationFrame(function () { this.loop() }.bind(this));
     },
+    animationLoop: function () {
+        if (!this.currentAnimation) {
+            this.estadoGameAtual = this.Estados.RUNNING;
+        }
+        else {
+            if (!this.currentAnimation.hasStarted) {
+                this.currentAnimation.startAnimation();
+            }
+            else {
+                if (this.currentAnimation.isRunning)
+                    this.currentAnimation.resumeAnimation();
+            }
+        }
+    },
     pausedLoop: function () {
-        if (this.currentAlpha > .5){
+        if (this.currentAlpha > .5) {
             this.currentAlpha -= .01;
             this.ctx.globalAlpha = this.currentAlpha;
         }
@@ -73,9 +91,9 @@ var Game = {
         this.update();
         this.renderer.clear();
         this.renderer.draw(this.levels[this.currentLevelIndex]);
-        
+
         /* Rodar debug visual */
-        if(this.debug)Debugger.debugAll(this);
+        if (this.debug) Debugger.debugAll(this);
     }
 
 

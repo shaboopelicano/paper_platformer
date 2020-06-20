@@ -16,8 +16,6 @@ export default class Map {
         
         this.larguraMapa = this.mapSource.indexOf('x',inicio) - inicio - 1;
         this.alturaMapa = this.mapSource.substring(inicio,fim - 1).match(/x/g,'').length;
-        console.log(this.larguraMapa);
-        
 
         var linha = [];
         for (var i = inicio + 1 ; i < fim; i++) {

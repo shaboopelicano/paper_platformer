@@ -583,7 +583,6 @@ var Map = /*#__PURE__*/function () {
       var fim = this.mapSource.indexOf(_FIM);
       this.larguraMapa = this.mapSource.indexOf('x', inicio) - inicio - 1;
       this.alturaMapa = this.mapSource.substring(inicio, fim - 1).match(/x/g, '').length;
-      console.log(this.larguraMapa);
       var linha = [];
 
       for (var i = inicio + 1; i < fim; i++) {
@@ -680,7 +679,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-var _default = "\n#INICIO#\n000000000000000000x\n000000000000000000x\n000000000000000000x\n000000000000000000x\n000000001100000000x\n000000000000000000x\n111001111100000000x\n000000000000000000x\n111111111100011111x\n000000000000000000x\n#FIM#\n";
+var _default = "\n#INICIO#\n00000000000000000000000x\n00000000000000000000000x\n00000000000000000000000x\n00000000000000000000000x\n00000000110000000000000x\n00000000000000000001111x\n11100111110000000000000x\n00000000000001111000000x\n11111111110000000000000x\n00000000000000000000000x\n#FIM#\n";
 exports.default = _default;
 },{}],"src/maps/index.js":[function(require,module,exports) {
 "use strict";
@@ -950,11 +949,15 @@ var _default = {
   tiles: false,
   position: false,
   map: false,
+  gameState: true,
   debugAll: function debugAll(game) {
     var currentLevel = game.levels[game.currentLevelIndex];
     if (this.tiles) this.debugTiles(game.renderer, currentLevel.camera, game.CONSTANTES.LARGURA, game.CONSTANTES.ALTURA);
     if (this.position) this.debugPosition(currentLevel);
     if (this.map) this.debugMap(currentLevel);
+  },
+  debugGameState: function debugGameState(game) {
+    console.log(game);
   },
   debugTiles: function debugTiles(renderer, camera, w, h) {
     var tileSize = camera.tileSize;
@@ -987,7 +990,160 @@ var _default = {
   }
 };
 exports.default = _default;
-},{}],"src/Game.js":[function(require,module,exports) {
+},{}],"src/animations/introAnimation.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _default = {
+  duration: 1000,
+  entities: [{
+    x: 0,
+    y: 0,
+    w: 100,
+    h: 100,
+    color: 'red'
+  }, {
+    x: 100,
+    y: 100,
+    w: 100,
+    h: 100,
+    color: 'green'
+  }, {
+    x: 100,
+    y: 100,
+    w: 100,
+    h: 100,
+    color: 'yellow'
+  }],
+  scripts: [{
+    entity: 0,
+    property: 'x',
+    value: 100
+  }, {
+    entity: 1,
+    property: 'y',
+    value: 200
+  }, {
+    entity: 2,
+    property: 'x',
+    value: 200
+  }, {
+    entity: 2,
+    property: 'y',
+    value: 200
+  }]
+};
+exports.default = _default;
+},{}],"src/animations/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _introAnimation = _interopRequireDefault(require("./introAnimation"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var _default = {
+  introAnimation: _introAnimation.default
+};
+exports.default = _default;
+},{"./introAnimation":"src/animations/introAnimation.js"}],"src/Animation.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _animations = _interopRequireDefault(require("./animations"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var Animation = /*#__PURE__*/function () {
+  function Animation(ctx) {
+    var animationId = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+    _classCallCheck(this, Animation);
+
+    this.hasStarted = false;
+    this.hasFinished = false;
+    this.isRunning = false;
+    this.animationObject = _animations.default[animationId];
+    this.ctx = ctx;
+    this.lastTimeCheck = 0;
+    this.duration = this.animationObject.duration;
+  }
+
+  _createClass(Animation, [{
+    key: "startAnimation",
+    value: function startAnimation() {
+      this.hasStarted = true;
+      this.isRunning = true;
+      this.lastTimeCheck = Date.now();
+      this.draw();
+    }
+  }, {
+    key: "resumeAnimation",
+    value: function resumeAnimation() {
+      var now = Date.now();
+
+      if (now - this.lastTimeCheck > this.duration) {
+        this.stopAnimation();
+      } else {
+        this.step();
+        this.draw();
+      }
+    }
+  }, {
+    key: "stopAnimation",
+    value: function stopAnimation() {
+      this.hasFinished = true;
+      this.isRunning = false;
+    }
+  }, {
+    key: "step",
+    value: function step() {
+      var _this = this;
+
+      this.animationObject.scripts.forEach(function (script) {
+        var currentEntity = _this.animationObject.entities[script.entity];
+        var change = _this.duration / script.value;
+        currentEntity[script.property] += change;
+      });
+    }
+  }, {
+    key: "draw",
+    value: function draw() {
+      var _this2 = this;
+
+      this.ctx.save();
+      this.ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+      this.animationObject.entities.forEach(function (entity) {
+        _this2.ctx.fillStyle = entity.color;
+
+        _this2.ctx.fillRect(entity.x, entity.y, entity.w, entity.h);
+      });
+      this.ctx.restore();
+    }
+  }]);
+
+  return Animation;
+}();
+
+exports.default = Animation;
+},{"./animations":"src/animations/index.js"}],"src/Game.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1002,6 +1158,8 @@ var _Input = _interopRequireDefault(require("./Input"));
 var _Level = _interopRequireDefault(require("./Level"));
 
 var _Debugger = _interopRequireDefault(require("./Debugger"));
+
+var _Animation = _interopRequireDefault(require("./Animation"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1020,9 +1178,10 @@ var Game = {
     RUNNING: 4
   },
   currentAlpha: 1.0,
-  estadoGameAtual: 4,
+  estadoGameAtual: 2,
   levels: [],
   currentLevelIndex: 0,
+  currentAnimation: null,
   debug: true,
   iniciarTudo: function iniciarTudo() {
     this.iniciarLevels();
@@ -1030,6 +1189,7 @@ var Game = {
     this.renderer = new _Renderer.default(this.ctx, this);
     this.input = _Input.default;
     this.input.iniciarInput();
+    this.currentAnimation = new _Animation.default(this.ctx, 'introAnimation');
   },
   iniciarLevels: function iniciarLevels() {
     this.levels.push(new _Level.default(1));
@@ -1058,6 +1218,10 @@ var Game = {
   },
   loop: function loop() {
     switch (this.estadoGameAtual) {
+      case Game.Estados.ANIMACAO:
+        this.animationLoop();
+        break;
+
       case Game.Estados.PAUSADO:
         this.pausedLoop();
         break;
@@ -1070,6 +1234,17 @@ var Game = {
     requestAnimationFrame(function () {
       this.loop();
     }.bind(this));
+  },
+  animationLoop: function animationLoop() {
+    if (!this.currentAnimation) {
+      this.estadoGameAtual = this.Estados.RUNNING;
+    } else {
+      if (!this.currentAnimation.hasStarted) {
+        this.currentAnimation.startAnimation();
+      } else {
+        if (this.currentAnimation.isRunning) this.currentAnimation.resumeAnimation();
+      }
+    }
   },
   pausedLoop: function pausedLoop() {
     if (this.currentAlpha > .5) {
@@ -1091,7 +1266,7 @@ var Game = {
 };
 var _default = Game;
 exports.default = _default;
-},{"./Renderer":"src/Renderer.js","./Input":"src/Input.js","./Level":"src/Level.js","./Debugger":"src/Debugger.js"}],"src/index.js":[function(require,module,exports) {
+},{"./Renderer":"src/Renderer.js","./Input":"src/Input.js","./Level":"src/Level.js","./Debugger":"src/Debugger.js","./Animation":"src/Animation.js"}],"src/index.js":[function(require,module,exports) {
 "use strict";
 
 require("./styles.css");
@@ -1135,7 +1310,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49919" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49788" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -3,11 +3,15 @@ export default {
     tiles: false,
     position: false,
     map:false,
+    gameState:true,
     debugAll: function (game) {
         var currentLevel = game.levels[game.currentLevelIndex];
         if (this.tiles) this.debugTiles(game.renderer, currentLevel.camera, game.CONSTANTES.LARGURA, game.CONSTANTES.ALTURA);
         if (this.position) this.debugPosition(currentLevel);
         if(this.map) this.debugMap(currentLevel);
+    },
+    debugGameState:function(game){
+        console.log(game);
     },
     debugTiles: function (renderer, camera, w, h) {
         var tileSize = camera.tileSize;
